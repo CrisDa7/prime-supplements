@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   IconLayoutDashboard, IconPackage, IconShoppingCart,
-  IconChartBar, IconRefresh, IconUsers, IconLogout, IconX,
+  IconChartBar, IconRefresh, IconUsers, IconLogout, IconX, IconScale,
 } from '@tabler/icons-react';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/ventas', icon: IconShoppingCart, label: 'Ventas' },
   { to: '/ganancias', icon: IconChartBar, label: 'Ganancias' },
   { to: '/stock', icon: IconRefresh, label: 'Actualizar Stock' },
+  { to: '/imc', icon: IconScale, label: 'Calculadora IMC' },
   { to: '/usuarios', icon: IconUsers, label: 'Usuarios' },
 ];
 

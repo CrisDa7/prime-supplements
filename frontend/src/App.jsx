@@ -12,6 +12,7 @@ import Ventas from './pages/Ventas';
 import Ganancias from './pages/Ganancias';
 import Stock from './pages/Stock';
 import Usuarios from './pages/Usuarios';
+import IMC from './pages/IMC';
 import { IconMenu2 } from '@tabler/icons-react';
 
 function AppLayout({ children }) {
@@ -86,6 +87,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <AppLayout><Usuarios /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/imc"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><IMC /></AppLayout>
                 </ProtectedRoute>
               }
             />
