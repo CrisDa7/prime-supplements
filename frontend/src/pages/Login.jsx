@@ -22,7 +22,8 @@ export default function Login() {
       showToast(isRegister ? 'Cuenta creada exitosamente' : 'Inicio de sesión exitoso');
       navigate('/dashboard');
     } catch (err) {
-      const msg = err.response?.data?.error || 'Error del servidor';
+      const status = err.response?.status;
+      const msg = status === 401 ? 'Credenciales incorrectas' : (err.response?.data?.error || 'Error del servidor');
       showToast(msg, 'error');
     } finally {
       setLoading(false);

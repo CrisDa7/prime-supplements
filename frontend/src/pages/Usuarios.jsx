@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import Topbar from '../components/Topbar';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../api/client';
 import { formatDate } from '../lib/utils';
@@ -11,7 +14,9 @@ export default function Usuarios() {
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState({ nombre: '', email: '', password: '', rol: 'administrador' });
   const [loading, setLoading] = useState(false);
+  const { user, logout } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => { loadUsuarios(); }, []);
 
@@ -40,18 +45,86 @@ export default function Usuarios() {
     setForm({ nombre: '', email: '', password: '', rol: 'administrador' });
   }
 
+  async function requestDelete(id) {
+    const target = usuarios.find((u) => u.id === id);
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar usuario',
+      html: `¿Seguro que deseas eliminar a <strong>${target?.nombre || 'este usuario'}</strong>?<br/>Esta acción no se puede deshacer.`,
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e05454',
+      cancelButtonColor: '#333',
+      background: '#171717',
+      color: '#d4d4d4',
+      iconColor: '#e05454',
+      customClass: {
+        popup: 'rounded-xl border border-[#222] shadow-2xl',
+        title: 'text-base font-bold',
+        htmlContainer: 'text-sm text-[#888]',
+        confirmButton: 'px-5 py-2 rounded-lg text-sm font-bold',
+        cancelButton: 'px-5 py-2 rounded-lg text-sm font-bold',
+      },
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await api.delete(`/usuarios/${id}`);
+      if (user?.id === id) {
+        logout();
+        navigate('/login');
+        showToast('Tu cuenta ha sido eliminada');
+      } else {
+        showToast('Usuario eliminado exitosamente');
+        loadUsuarios();
+      }
+    } catch { showToast('Error al eliminar usuario', 'error'); }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.nombre.trim()) return showToast('Ingresa el nombre', 'error');
     if (!form.email.trim()) return showToast('Ingresa el email', 'error');
     if (!editingUser && !form.password) return showToast('Ingresa la contraseña', 'error');
+
+    if (editingUser && form.password) {
+      const result = await Swal.fire({
+        icon: 'question',
+        title: 'Cambiar contraseña',
+        html: `¿Seguro que deseas cambiar la contraseña de <strong>${editingUser.nombre}</strong>?<br/>Se cerrará su sesión actual.`,
+        showCancelButton: true,
+        confirmButtonText: 'Cambiar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#e8884e',
+        cancelButtonColor: '#333',
+        background: '#171717',
+        color: '#d4d4d4',
+        iconColor: '#e8884e',
+        customClass: {
+          popup: 'rounded-xl border border-[#222] shadow-2xl',
+          title: 'text-base font-bold',
+          htmlContainer: 'text-sm text-[#888]',
+          confirmButton: 'px-5 py-2 rounded-lg text-sm font-bold',
+          cancelButton: 'px-5 py-2 rounded-lg text-sm font-bold',
+        },
+        reverseButtons: true,
+      });
+      if (!result.isConfirmed) return;
+    }
+
     setLoading(true);
     try {
       if (editingUser) {
         const payload = { ...form };
         if (!payload.password) delete payload.password;
         await api.put(`/usuarios/${editingUser.id}`, payload);
-        showToast('Usuario actualizado');
+        showToast('Usuario actualizado exitosamente');
+        if (form.password && user?.id === editingUser.id) {
+          logout();
+          navigate('/login');
+          return;
+        }
       } else {
         await api.post('/usuarios', form);
         showToast('Usuario creado exitosamente');
@@ -63,15 +136,6 @@ export default function Usuarios() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleDelete(id) {
-    if (!confirm('Eliminar este usuario?')) return;
-    try {
-      await api.delete(`/usuarios/${id}`);
-      showToast('Usuario eliminado');
-      loadUsuarios();
-    } catch { showToast('Error al eliminar', 'error'); }
   }
 
   return (
@@ -150,7 +214,7 @@ export default function Usuarios() {
                       <button onClick={() => openEdit(u)} className="text-[#888] hover:text-[#bbb] p-1.5 rounded-lg hover:bg-[#1a1a1a] transition-all" title="Editar">
                         <IconEdit size={15} />
                       </button>
-                      <button onClick={() => handleDelete(u.id)} className="text-[#e05454] hover:text-[#ff6b4a] p-1.5 rounded-lg hover:bg-[#1e1010] transition-all ml-1" title="Eliminar">
+                      <button onClick={() => requestDelete(u.id)} className="text-[#e05454] hover:text-[#ff6b4a] p-1.5 rounded-lg hover:bg-[#1e1010] transition-all ml-1" title="Eliminar">
                         <IconTrash size={15} />
                       </button>
                     </td>
