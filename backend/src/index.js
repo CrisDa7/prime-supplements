@@ -9,6 +9,7 @@ const ventaRoutes = require('./routes/ventas');
 const movimientoRoutes = require('./routes/movimientos');
 const stockRoutes = require('./routes/stock');
 const usuarioRoutes = require('./routes/usuarios');
+const alimentoRoutes = require('./routes/alimentos');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +27,7 @@ app.use('/api/ventas', ventaRoutes);
 app.use('/api/movimientos', movimientoRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/alimentos', alimentoRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
