@@ -3,6 +3,8 @@ import { formatMoney, formatDateFull } from '../lib/utils';
 export default function ComprobanteModal({ venta, onClose }) {
   if (!venta) return null;
 
+  const items = venta.items || [];
+
   return (
     <div
       className="fixed inset-0 bg-black/75 flex items-center justify-center z-50"
@@ -34,32 +36,42 @@ export default function ComprobanteModal({ venta, onClose }) {
                 <span className="text-[#888]">Nombre:</span>
                 <span className="text-[#ccc]">{venta.cliente}</span>
               </div>
-              <div className="flex justify-between text-sm py-1.5">
-                <span className="text-[#888]">Telefono:</span>
+              <div className="flex justify-between text-sm border-b border-[#1e1e1e] py-1.5">
+                <span className="text-[#888]">Teléfono:</span>
                 <span className="text-[#ccc]">{venta.telefono || '—'}</span>
               </div>
+              {venta.descripcion && (
+                <div className="flex justify-between text-sm py-1.5">
+                  <span className="text-[#888]">Nota:</span>
+                  <span className="text-[#ccc]">{venta.descripcion}</span>
+                </div>
+              )}
             </div>
 
             <div className="mb-3.5">
               <div className="text-[11px] text-[#666] uppercase tracking-wide mb-2">Detalle</div>
-              <div className="flex justify-between text-sm border-b border-[#1e1e1e] py-1.5">
-                <span className="text-[#888]">Producto:</span>
-                <span className="text-[#ccc]">{venta.producto_nombre || '—'}</span>
-              </div>
-              {venta.producto_sabor && (
+              {items.length > 0 ? items.map((item, idx) => (
+                <div key={idx} className="border-b border-[#1e1e1e] py-2 last:border-b-0">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#ccc]">{item.producto_nombre}{item.producto_sabor ? ` (${item.producto_sabor})` : ''}</span>
+                    <span className="text-[#ccc]">{formatMoney(item.subtotal)}</span>
+                  </div>
+                  <div className="text-xs text-[#666] mt-0.5">
+                    {item.cantidad} x {formatMoney(item.precio_unitario)}
+                  </div>
+                </div>
+              )) : (
+                <div className="flex justify-between text-sm border-b border-[#1e1e1e] py-1.5">
+                  <span className="text-[#888]">Producto:</span>
+                  <span className="text-[#ccc]">{venta.producto_nombre || '—'}</span>
+                </div>
+              )}
+              {items.length === 0 && venta.producto_sabor && (
                 <div className="flex justify-between text-sm border-b border-[#1e1e1e] py-1.5">
                   <span className="text-[#888]">Sabor:</span>
                   <span className="text-[#ccc]">{venta.producto_sabor}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm border-b border-[#1e1e1e] py-1.5">
-                <span className="text-[#888]">Precio unit.:</span>
-                <span className="text-[#ccc]">{formatMoney(venta.total / venta.cantidad)}</span>
-              </div>
-              <div className="flex justify-between text-sm py-1.5">
-                <span className="text-[#888]">Cantidad:</span>
-                <span className="text-[#ccc]">{venta.cantidad}</span>
-              </div>
             </div>
 
             <div className="flex justify-between pt-3 pb-1.5 border-t border-dashed border-[#333] mt-2 text-base font-bold text-white">

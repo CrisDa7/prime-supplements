@@ -24,50 +24,98 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  const { cliente, telefono, descripcion, items } = req.body;
+
+  if (!cliente) return res.status(400).json({ error: 'Nombre del cliente requerido' });
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Debe incluir al menos un producto' });
+  }
+
+  const client = await db.pool.connect();
   try {
-    const { cliente, telefono, productoId, cantidad, precioVenta } = req.body;
-    if (!cliente) return res.status(400).json({ error: 'Nombre del cliente requerido' });
-    if (!productoId) return res.status(400).json({ error: 'Producto requerido' });
-    if (!cantidad || cantidad < 1) return res.status(400).json({ error: 'Cantidad inválida' });
+    await client.query('BEGIN');
 
-    const prodResult = await db.query(
-      'SELECT * FROM productos WHERE id = $1 AND user_id = $2',
-      [productoId, req.userId]
-    );
-    const prod = prodResult.rows[0];
-    if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
-    if (prod.stock < cantidad) {
-      return res.status(400).json({ error: `Stock insuficiente. Disponible: ${prod.stock}` });
+    const itemsConDetalle = [];
+    let totalGeneral = 0;
+
+    for (const item of items) {
+      const { productoId, cantidad, precioVenta } = item;
+      if (!productoId) throw { status: 400, message: 'ID de producto requerido' };
+      if (!cantidad || cantidad < 1) throw { status: 400, message: 'Cantidad inválida' };
+
+      const prodResult = await client.query(
+        'SELECT * FROM productos WHERE id = $1 AND user_id = $2',
+        [productoId, req.userId]
+      );
+      const prod = prodResult.rows[0];
+      if (!prod) throw { status: 404, message: `Producto ID ${productoId} no encontrado` };
+      if (prod.stock < cantidad) {
+        throw { status: 400, message: `Stock insuficiente para "${prod.nombre}". Disponible: ${prod.stock}` };
+      }
+
+      const precioUnitario = precioVenta ? parseFloat(precioVenta) : parseFloat(prod.venta);
+      if (isNaN(precioUnitario) || precioUnitario < 0) {
+        throw { status: 400, message: `Precio inválido para "${prod.nombre}"` };
+      }
+
+      const subtotal = precioUnitario * cantidad;
+      totalGeneral += subtotal;
+
+      await client.query(
+        'UPDATE productos SET stock = stock - $1 WHERE id = $2',
+        [cantidad, productoId]
+      );
+
+      itemsConDetalle.push({
+        producto_id: prod.id,
+        producto_nombre: prod.nombre,
+        producto_sabor: prod.sabor,
+        cantidad,
+        precio_unitario: precioUnitario,
+        subtotal,
+      });
     }
 
-    const precioUnitario = precioVenta ? parseFloat(precioVenta) : parseFloat(prod.venta);
-    if (isNaN(precioUnitario) || precioUnitario < 0) {
-      return res.status(400).json({ error: 'Precio inválido' });
-    }
-    const total = precioUnitario * cantidad;
+    const detalleStr = itemsConDetalle.map((i) => `${i.producto_nombre} x${i.cantidad}`).join(', ');
+    const descripcionFinal = descripcion || '';
 
-    await db.query('UPDATE productos SET stock = stock - $1 WHERE id = $2', [cantidad, productoId]);
-
-    const ventaResult = await db.query(
-      `INSERT INTO ventas (user_id, cliente, telefono, producto_id, cantidad, total)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [req.userId, cliente, telefono || '', productoId, cantidad, total]
+    const ventaResult = await client.query(
+      `INSERT INTO ventas (user_id, cliente, telefono, descripcion, producto_id, cantidad, total, items)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [
+        req.userId,
+        cliente,
+        telefono || '',
+        descripcionFinal,
+        itemsConDetalle[0].producto_id,
+        itemsConDetalle[0].cantidad,
+        totalGeneral,
+        JSON.stringify(itemsConDetalle),
+      ]
     );
 
-    await db.query(
+    await client.query(
       `INSERT INTO movimientos (user_id, tipo, descripcion, monto)
        VALUES ($1, 'ingreso', $2, $3)`,
-      [req.userId, `Venta — ${cliente} (${prod.nombre} x${cantidad})`, total]
+      [req.userId, `Venta — ${cliente} (${detalleStr})`, totalGeneral]
     );
 
+    await client.query('COMMIT');
+
     const venta = ventaResult.rows[0];
-    venta.producto_nombre = prod.nombre;
-    venta.producto_sabor = prod.sabor;
+    venta.items = itemsConDetalle;
+    venta.producto_nombre = itemsConDetalle[0].producto_nombre;
+    venta.producto_sabor = itemsConDetalle[0].producto_sabor;
 
     res.status(201).json(venta);
   } catch (err) {
+    await client.query('ROLLBACK');
+    const status = err.status || 500;
+    const message = err.message || 'Error al registrar venta';
     console.error(err);
-    res.status(500).json({ error: 'Error al registrar venta' });
+    res.status(status).json({ error: message });
+  } finally {
+    client.release();
   }
 });
 
