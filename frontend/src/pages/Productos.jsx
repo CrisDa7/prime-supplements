@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import Topbar from '../components/Topbar';
 import EditarProductoModal from '../components/EditarProductoModal';
 import { useToast } from '../context/ToastContext';
@@ -64,7 +65,28 @@ export default function Productos() {
   async function handleDelete(id) {
     const prod = productos.find((p) => p.id === id);
     if (!prod) return;
-    if (!confirm(`¿Eliminar "${prod.nombre}"? Esta acción no se puede deshacer.`)) return;
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar producto',
+      html: `¿Seguro que deseas eliminar <strong>${prod.nombre}</strong>?<br/>Esta acción no se puede deshacer.`,
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#e05454',
+      cancelButtonColor: '#333',
+      background: '#171717',
+      color: '#d4d4d4',
+      iconColor: '#e05454',
+      customClass: {
+        popup: 'rounded-xl border border-[#222] shadow-2xl',
+        title: 'text-base font-bold',
+        htmlContainer: 'text-sm text-[#888]',
+        confirmButton: 'px-5 py-2 rounded-lg text-sm font-bold',
+        cancelButton: 'px-5 py-2 rounded-lg text-sm font-bold',
+      },
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
     try {
       await api.delete(`/productos/${id}`);
       showToast('Producto eliminado');
