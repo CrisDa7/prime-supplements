@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#0d0d0d] text-[#d4d4d4] font-sans antialiased;
+  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+}
+
+@layer components {
+  .card {
+    @apply bg-[#171717] border border-[#222] rounded-xl overflow-hidden;
+  }
+  .stat-value {
+    @apply text-2xl font-extrabold text-prime-blue leading-none;
+  }
+  .stat-label {
+    @apply text-[11px] text-[#555] uppercase tracking-wide mb-2;
+  }
+  .stat-sub {
+    @apply text-[11px] text-[#444] mt-1.5;
+  }
+  .section-title {
+    @apply text-xs font-bold text-[#555] uppercase tracking-wider mb-3 flex items-center gap-1.5;
+  }
+  .badge-ok {
+    @apply bg-[#1a2a10] text-[#7ec84e] text-[11px] font-bold px-2.5 py-0.5 rounded-full;
+  }
+  .badge-low {
+    @apply bg-[#2a1a10] text-[#e8884e] text-[11px] font-bold px-2.5 py-0.5 rounded-full;
+  }
+  .badge-ingreso {
+    @apply bg-[#0e2210] text-[#6dba41] text-[11px] font-bold px-2.5 py-0.5 rounded-full;
+  }
+  .badge-egreso {
+    @apply bg-[#220e0e] text-[#e05454] text-[11px] font-bold px-2.5 py-0.5 rounded-full;
+  }
+  .input {
+    @apply bg-[#111] border border-[#2a2a2a] text-[#ccc] px-3 py-2 rounded-lg text-sm outline-none w-full;
+  }
+  .input:focus {
+    @apply border-prime-blue ring-2 ring-prime-blue/10;
+  }
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg text-sm font-bold text-white bg-prime-blue hover:bg-[#2563eb] transition-all inline-flex items-center gap-1.5;
+  }
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg text-sm font-bold text-[#888] bg-transparent border border-[#333] hover:bg-[#1a1a1a] hover:text-[#bbb] transition-all;
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-slide-in {
+    animation: slide-in 0.2s ease;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .comprobante-print,
+  .comprobante-print * {
+    visibility: visible;
+  }
+  .comprobante-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: white;
+    color: black !important;
+    padding: 40px;
+    border: none;
+  }
+  .comprobante-print [class*="border"] {
+    border-color: #ddd !important;
+  }
+  .comprobante-print img {
+    display: block;
+    margin: 0 auto 16px;
+    max-height: 80px;
+  }
+}

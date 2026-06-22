@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prime Supplements</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-title">PRIME</div>
+          <div class="logo-sub">Supplements</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item active" onclick="showPage('dashboard')">
+          <i class="ti ti-layout-dashboard"></i> Dashboard
+        </a>
+        <a class="nav-item" onclick="showPage('productos')">
+          <i class="ti ti-package"></i> Productos
+        </a>
+        <a class="nav-item" onclick="showPage('ventas')">
+          <i class="ti ti-shopping-cart"></i> Ventas
+        </a>
+        <a class="nav-item" onclick="showPage('ganancias')">
+          <i class="ti ti-chart-bar"></i> Ganancias
+        </a>
+        <a class="nav-item" onclick="showPage('stock')">
+          <i class="ti ti-refresh"></i> Actualizar Stock
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="font-size:11px;color:#444;">Prime Supplements v1.0</div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="topbar">
+        <div>
+          <h1 class="page-title" id="page-title">Dashboard</h1>
+          <div class="page-subtitle" id="page-subtitle">Resumen general de tu negocio</div>
+        </div>
+        <div class="topbar-right">
+          <span class="date-badge" id="current-date"></span>
+          <span class="version-badge">PRO</span>
+        </div>
+      </div>
+
+      <!-- PAGES -->
+      <div class="page-content" id="content">
+
+        <!-- DASHBOARD -->
+        <div id="page-dashboard" class="page active">
+          <div class="stats-grid" id="dashboard-stats"></div>
+          <div class="two-col" style="margin-top:24px">
+            <div>
+              <h3 class="section-title"><i class="ti ti-clock"></i> Últimas ventas</h3>
+              <div class="card">
+                <table class="table" id="dashboard-recent-sales">
+                  <thead><tr><th>Cliente</th><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title"><i class="ti ti-alert-triangle"></i> Stock bajo</h3>
+              <div class="card" id="low-stock-panel"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRODUCTOS -->
+        <div id="page-productos" class="page">
+          <div class="page-tabs">
+            <button class="tab-btn active" onclick="switchTab('prod','list')">Lista de productos</button>
+            <button class="tab-btn" onclick="switchTab('prod','new')">+ Nuevo producto</button>
+          </div>
+
+          <div id="prod-list">
+            <div class="card" style="margin-top:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <input type="text" id="search-productos" placeholder="🔍 Buscar producto..." class="search-input" oninput="renderProductos()">
+              </div>
+              <table class="table" id="tabla-productos">
+                <thead><tr><th>Nombre</th><th>Sabor</th><th>P. Compra</th><th>P. Venta</th><th>Stock</th><th>Ganancia</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="prod-new" style="display:none">
+            <div class="card form-card" style="margin-top:16px">
+              <h3 class="form-title">Registrar nuevo producto</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label>Nombre del producto *</label>
+                  <input type="text" id="prod-nombre" placeholder="Ej: Whey Protein Gold 5lb">
+                </div>
+                <div class="field">
+                  <label>Sabor (opcional)</label>
+                  <input type="text" id="prod-sabor" placeholder="Ej: Chocolate, Vainilla...">
+                </div>
+                <div class="field">
+                  <label>Precio de compra ($) *</label>
+                  <input type="number" id="prod-compra" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="field">
+                  <label>Precio de venta ($) *</label>
+                  <input type="number" id="prod-venta" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="field">
+                  <label>Cantidad inicial (stock) *</label>
+                  <input type="number" id="prod-cantidad" placeholder="0" min="0">
+                </div>
+                <div class="field">
+                  <label>Stock mínimo alerta</label>
+                  <input type="number" id="prod-minstock" placeholder="5" min="0" value="5">
+                </div>
+              </div>
+              <div class="profit-preview" id="profit-preview" style="display:none">
+                <span>Ganancia por unidad:</span>
+                <strong id="profit-amount">$0.00</strong>
+                <span id="profit-pct" style="color:#aaa"></span>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-ghost" onclick="switchTab('prod','list')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarProducto()"><i class="ti ti-check"></i> Guardar producto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VENTAS -->
+        <div id="page-ventas" class="page">
+          <div class="two-col">
+            <div>
+              <h3 class="section-title">Registrar venta</h3>
+              <div class="card form-card">
+                <div class="field">
+                  <label>Nombre del cliente *</label>
+                  <input type="text" id="venta-cliente" placeholder="Ej: Carlos Mendoza">
+                </div>
+                <div class="field">
+                  <label>Teléfono del cliente</label>
+                  <input type="text" id="venta-telefono" placeholder="Ej: 0991234567">
+                </div>
+                <div class="field">
+                  <label>Producto *</label>
+                  <select id="venta-producto" onchange="calcularVenta()">
+                    <option value="">— Seleccionar producto —</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Cantidad *</label>
+                  <input type="number" id="venta-cantidad" placeholder="1" min="1" value="1" oninput="calcularVenta()">
+                </div>
+                <div class="venta-resumen" id="venta-resumen" style="display:none">
+                  <div class="resumen-row"><span>Precio unitario:</span><strong id="res-precio">$0.00</strong></div>
+                  <div class="resumen-row"><span>Cantidad:</span><strong id="res-cantidad">0</strong></div>
+                  <div class="resumen-row total"><span>Total:</span><strong id="res-total">$0.00</strong></div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-success" onclick="registrarVenta()"><i class="ti ti-check"></i> Registrar venta</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Ventas recientes</h3>
+              <div class="card">
+                <table class="table" id="tabla-ventas">
+                  <thead><tr><th>Cliente</th><th>Tel.</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GANANCIAS -->
+        <div id="page-ganancias" class="page">
+          <div class="stats-grid" id="ganancia-stats"></div>
+          <div style="margin-top:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <h3 class="section-title" style="margin:0"><i class="ti ti-list"></i> Todos los movimientos</h3>
+            <select id="filtro-tipo" onchange="renderGanancias()" class="filter-select">
+              <option value="">Todos</option>
+              <option value="ingreso">Solo ingresos</option>
+              <option value="egreso">Solo egresos</option>
+            </select>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <table class="table" id="tabla-ganancias">
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Monto</th><th>Saldo acum.</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STOCK -->
+        <div id="page-stock" class="page">
+          <div class="two-col">
+            <div>
+              <h3 class="section-title">Agregar stock a producto existente</h3>
+              <div class="card form-card">
+                <div class="field">
+                  <label>Producto *</label>
+                  <select id="stock-producto" onchange="verStockActual()">
+                    <option value="">— Seleccionar producto —</option>
+                  </select>
+                </div>
+                <div class="stock-info" id="stock-info" style="display:none">
+                  <i class="ti ti-package"></i> Stock actual: <strong id="stock-actual-val">0</strong> unidades
+                </div>
+                <div class="field">
+                  <label>Cantidad a agregar *</label>
+                  <input type="number" id="stock-cantidad" placeholder="Ej: 20" min="1">
+                </div>
+                <div class="field">
+                  <label>Precio de compra (nuevo lote) *</label>
+                  <input type="number" id="stock-precio" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="field">
+                  <label>Proveedor / Nota</label>
+                  <input type="text" id="stock-nota" placeholder="Ej: MuscleTech — Factura #001">
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" onclick="actualizarStock()"><i class="ti ti-refresh"></i> Actualizar stock</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title"><i class="ti ti-alert-triangle"></i> Alertas de stock bajo</h3>
+              <div class="card" id="stock-alertas"></div>
+            </div>
+          </div>
+          <div style="margin-top:24px">
+            <h3 class="section-title">Historial de actualizaciones de stock</h3>
+            <div class="card">
+              <table class="table" id="tabla-stock-hist">
+                <thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad añadida</th><th>P. Compra</th><th>Proveedor</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end content -->
+    </main>
+  </div>
+
+  <!-- MODAL COMPROBANTE -->
+  <div id="modal-comprobante" class="modal-overlay" style="display:none" onclick="cerrarModal(event)">
+    <div class="modal-box" id="comprobante-content">
+      <div class="comprobante-header">
+        <div class="comprobante-logo">⚡ PRIME SUPPLEMENTS</div>
+        <div class="comprobante-sub">Comprobante de venta</div>
+      </div>
+      <div id="comprobante-body"></div>
+      <div class="comprobante-footer">
+        <p>¡Gracias por tu compra! 💪</p>
+        <p style="font-size:11px;color:#888;margin-top:4px">Prime Supplements — Tu tienda de confianza</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('modal-comprobante').style.display='none'">Cerrar</button>
+        <button class="btn btn-primary" onclick="imprimirComprobante()"><i class="ti ti-printer"></i> Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR PRODUCTO -->
+  <div id="modal-editar" class="modal-overlay" style="display:none" onclick="cerrarModalEditar(event)">
+    <div class="modal-box">
+      <h3 class="form-title">Editar producto</h3>
+      <input type="hidden" id="edit-id">
+      <div class="form-grid">
+        <div class="field"><label>Nombre *</label><input type="text" id="edit-nombre"></div>
+        <div class="field"><label>Sabor</label><input type="text" id="edit-sabor"></div>
+        <div class="field"><label>P. Compra ($) *</label><input type="number" id="edit-compra" step="0.01"></div>
+        <div class="field"><label>P. Venta ($) *</label><input type="number" id="edit-venta" step="0.01"></div>
+        <div class="field"><label>Stock mínimo</label><input type="number" id="edit-minstock"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('modal-editar').style.display='none'">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarEdicion()"><i class="ti ti-check"></i> Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" style="display:none"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
