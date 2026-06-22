@@ -5,15 +5,30 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 router.use(authenticate);
 
+function isAdmin(req) {
+  return req.userRol === 'administrador';
+}
+
 router.get('/', async (req, res) => {
   try {
     const { tipo } = req.query;
-    let sql = 'SELECT * FROM movimientos WHERE user_id = $1';
-    const params = [req.userId];
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = 'SELECT * FROM movimientos';
+      params = [];
+    } else {
+      sql = 'SELECT * FROM movimientos WHERE user_id = $1';
+      params = [req.userId];
+    }
 
     if (tipo === 'ingreso' || tipo === 'egreso') {
-      sql += ' AND tipo = $2';
-      params.push(tipo);
+      if (isAdmin(req)) {
+        sql += ' WHERE tipo = $1';
+        params.push(tipo);
+      } else {
+        sql += ' AND tipo = $2';
+        params.push(tipo);
+      }
     }
 
     sql += ' ORDER BY fecha DESC LIMIT 100';

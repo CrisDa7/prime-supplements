@@ -1,16 +1,25 @@
 const express = require('express');
 const db = require('../db');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticate);
 
+function isAdmin(req) {
+  return req.userRol === 'administrador';
+}
+
 router.get('/', async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT * FROM productos WHERE user_id = $1 ORDER BY created_at DESC',
-      [req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = 'SELECT * FROM productos ORDER BY created_at DESC';
+      params = [];
+    } else {
+      sql = 'SELECT * FROM productos WHERE user_id = $1 ORDER BY created_at DESC';
+      params = [req.userId];
+    }
+    const result = await db.query(sql, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -20,10 +29,15 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT * FROM productos WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = 'SELECT * FROM productos WHERE id = $1';
+      params = [req.params.id];
+    } else {
+      sql = 'SELECT * FROM productos WHERE id = $1 AND user_id = $2';
+      params = [req.params.id, req.userId];
+    }
+    const result = await db.query(sql, params);
     if (!result.rows[0]) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json(result.rows[0]);
   } catch {
@@ -68,12 +82,19 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { nombre, sabor, compra, venta, minStock } = req.body;
-    const result = await db.query(
-      `UPDATE productos SET nombre = $1, sabor = $2, compra = $3, venta = $4,
-       min_stock = $5, updated_at = NOW()
-       WHERE id = $6 AND user_id = $7 RETURNING *`,
-      [nombre, sabor || '', compra, venta, minStock || 5, req.params.id, req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = `UPDATE productos SET nombre = $1, sabor = $2, compra = $3, venta = $4,
+             min_stock = $5, updated_at = NOW()
+             WHERE id = $6 RETURNING *`;
+      params = [nombre, sabor || '', compra, venta, minStock || 5, req.params.id];
+    } else {
+      sql = `UPDATE productos SET nombre = $1, sabor = $2, compra = $3, venta = $4,
+             min_stock = $5, updated_at = NOW()
+             WHERE id = $6 AND user_id = $7 RETURNING *`;
+      params = [nombre, sabor || '', compra, venta, minStock || 5, req.params.id, req.userId];
+    }
+    const result = await db.query(sql, params);
     if (!result.rows[0]) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json(result.rows[0]);
   } catch {
@@ -83,10 +104,15 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const result = await db.query(
-      'DELETE FROM productos WHERE id = $1 AND user_id = $2 RETURNING id',
-      [req.params.id, req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = 'DELETE FROM productos WHERE id = $1 RETURNING id';
+      params = [req.params.id];
+    } else {
+      sql = 'DELETE FROM productos WHERE id = $1 AND user_id = $2 RETURNING id';
+      params = [req.params.id, req.userId];
+    }
+    const result = await db.query(sql, params);
     if (!result.rows[0]) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ message: 'Producto eliminado' });
   } catch {

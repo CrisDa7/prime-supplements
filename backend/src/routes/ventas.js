@@ -5,17 +5,30 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 router.use(authenticate);
 
+function isAdmin(req) {
+  return req.userRol === 'administrador';
+}
+
 router.get('/', async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT v.*, p.nombre as producto_nombre, p.sabor as producto_sabor
-       FROM ventas v
-       JOIN productos p ON p.id = v.producto_id
-       WHERE v.user_id = $1
-       ORDER BY v.fecha DESC
-       LIMIT 50`,
-      [req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = `SELECT v.*, p.nombre as producto_nombre, p.sabor as producto_sabor
+             FROM ventas v
+             JOIN productos p ON p.id = v.producto_id
+             ORDER BY v.fecha DESC
+             LIMIT 50`;
+      params = [];
+    } else {
+      sql = `SELECT v.*, p.nombre as producto_nombre, p.sabor as producto_sabor
+             FROM ventas v
+             JOIN productos p ON p.id = v.producto_id
+             WHERE v.user_id = $1
+             ORDER BY v.fecha DESC
+             LIMIT 50`;
+      params = [req.userId];
+    }
+    const result = await db.query(sql, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -43,10 +56,15 @@ router.post('/', async (req, res) => {
       if (!productoId) throw { status: 400, message: 'ID de producto requerido' };
       if (!cantidad || cantidad < 1) throw { status: 400, message: 'Cantidad inválida' };
 
-      const prodResult = await client.query(
-        'SELECT * FROM productos WHERE id = $1 AND user_id = $2',
-        [productoId, req.userId]
-      );
+      let sql, params;
+      if (isAdmin(req)) {
+        sql = 'SELECT * FROM productos WHERE id = $1';
+        params = [productoId];
+      } else {
+        sql = 'SELECT * FROM productos WHERE id = $1 AND user_id = $2';
+        params = [productoId, req.userId];
+      }
+      const prodResult = await client.query(sql, params);
       const prod = prodResult.rows[0];
       if (!prod) throw { status: 404, message: `Producto ID ${productoId} no encontrado` };
       if (prod.stock < cantidad) {
@@ -55,7 +73,7 @@ router.post('/', async (req, res) => {
 
       const precioUnitario = precioVenta ? parseFloat(precioVenta) : parseFloat(prod.venta);
       if (isNaN(precioUnitario) || precioUnitario < 0) {
-        throw { status: 400, message: `Precio inválido para "${prod.nombre}"` };
+        throw { status: 4000, message: `Precio inválido para "${prod.nombre}"` };
       }
 
       const subtotal = precioUnitario * cantidad;

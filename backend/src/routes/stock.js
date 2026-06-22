@@ -5,17 +5,30 @@ const { authenticate } = require('../middleware/auth');
 const router = express.Router();
 router.use(authenticate);
 
+function isAdmin(req) {
+  return req.userRol === 'administrador';
+}
+
 router.get('/', async (req, res) => {
   try {
-    const result = await db.query(
-      `SELECT sh.*, p.nombre as producto_nombre
-       FROM stock_historial sh
-       JOIN productos p ON p.id = sh.producto_id
-       WHERE sh.user_id = $1
-       ORDER BY sh.fecha DESC
-       LIMIT 50`,
-      [req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = `SELECT sh.*, p.nombre as producto_nombre
+             FROM stock_historial sh
+             JOIN productos p ON p.id = sh.producto_id
+             ORDER BY sh.fecha DESC
+             LIMIT 50`;
+      params = [];
+    } else {
+      sql = `SELECT sh.*, p.nombre as producto_nombre
+             FROM stock_historial sh
+             JOIN productos p ON p.id = sh.producto_id
+             WHERE sh.user_id = $1
+             ORDER BY sh.fecha DESC
+             LIMIT 50`;
+      params = [req.userId];
+    }
+    const result = await db.query(sql, params);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -30,10 +43,15 @@ router.post('/', async (req, res) => {
     if (!cantidad || cantidad < 1) return res.status(400).json({ error: 'Cantidad inválida' });
     if (precio === undefined || precio < 0) return res.status(400).json({ error: 'Precio inválido' });
 
-    const prodResult = await db.query(
-      'SELECT * FROM productos WHERE id = $1 AND user_id = $2',
-      [productoId, req.userId]
-    );
+    let sql, params;
+    if (isAdmin(req)) {
+      sql = 'SELECT * FROM productos WHERE id = $1';
+      params = [productoId];
+    } else {
+      sql = 'SELECT * FROM productos WHERE id = $1 AND user_id = $2';
+      params = [productoId, req.userId];
+    }
+    const prodResult = await db.query(sql, params);
     const prod = prodResult.rows[0];
     if (!prod) return res.status(404).json({ error: 'Producto no encontrado' });
 
