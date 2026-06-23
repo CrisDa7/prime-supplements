@@ -17,8 +17,6 @@ async function runMigrations() {
       console.error(`Migration ${file} failed:`, err.message);
     }
   }
-
-  await pool.end();
 }
 
 runMigrations();
